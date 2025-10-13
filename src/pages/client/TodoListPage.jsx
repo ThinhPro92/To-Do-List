@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const TodoList = () => {
+const TodoListPage = () => {
   const [todo, setTodo] = useState([]);
   const [meta, setMeta] = useState(null);
   const [searchValue, setSearchValue] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const [query, setQuery] = useState({
     _page: 1,
@@ -63,6 +64,24 @@ const TodoList = () => {
     setQuery((prev) => ({ ...prev, _page: page }));
   };
 
+  const handleFilterStatus = (value) => {
+    setStatusFilter(value);
+  };
+
+  const handleResetFilters = () => {
+    setSearchValue("");
+    setPriorityFilter("");
+    setStatusFilter("");
+    setQuery({
+      _page: 1,
+      _limit: 6,
+      _sort: "",
+      _order: "",
+      q: "",
+      priority: undefined,
+    });
+  };
+
   const getTaskStatus = (item) => {
     const now = new Date();
     const due = new Date(item.dueDate);
@@ -74,11 +93,17 @@ const TodoList = () => {
   };
 
   const getPriorityLabel = (value) => {
-    if (value === 1) return "Cao";
+    if (value === 3) return "Cao";
     if (value === 2) return "Trung bình";
-    if (value === 3) return "Thấp";
+    if (value === 1) return "Thấp";
     return "—";
   };
+
+  const filteredTodos = todo.filter((item) => {
+    const status = getTaskStatus(item).text;
+    if (statusFilter === "") return true;
+    return status === statusFilter;
+  });
 
   return (
     <div className="max-w-7xl mx-auto mt-10 p-8 bg-white rounded-xl shadow-md">
@@ -100,16 +125,27 @@ const TodoList = () => {
           </button>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3 justify-center">
           <select
             value={priorityFilter}
             onChange={(e) => handleFilterPriority(e.target.value)}
             className="border border-gray-300 px-3 py-2 rounded-lg text-gray-700"
           >
             <option value="">Tất cả ưu tiên</option>
-            <option value="1">Cao</option>
+            <option value="3">Cao</option>
             <option value="2">Trung bình</option>
-            <option value="3">Thấp</option>
+            <option value="1">Thấp</option>
+          </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => handleFilterStatus(e.target.value)}
+            className="border border-gray-300 px-3 py-2 rounded-lg text-gray-700"
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="Đang thực hiện">Đang thực hiện</option>
+            <option value="Quá hạn">Quá hạn</option>
+            <option value="Hoàn thành">Hoàn thành</option>
           </select>
 
           <select
@@ -118,17 +154,23 @@ const TodoList = () => {
             className="border border-gray-300 px-3 py-2 rounded-lg text-gray-700"
           >
             <option value="">Sắp xếp mặc định</option>
-            <option value="desc">Ưu tiên thấp → cao</option>
             <option value="asc">Ưu tiên cao → thấp</option>
+            <option value="desc">Ưu tiên thấp → cao</option>
           </select>
+
+          <button
+            onClick={handleResetFilters}
+            className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+          >
+            Làm mới
+          </button>
         </div>
       </div>
-
       <h2 className="text-2xl font-semibold text-gray-800 mb-4">
         📋 Danh sách công việc
       </h2>
 
-      {todo && todo.length > 0 ? (
+      {filteredTodos && filteredTodos.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full border border-gray-200 text-sm text-left">
             <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
@@ -140,14 +182,15 @@ const TodoList = () => {
                 <th className="px-4 py-3 border">Mức ưu tiên</th>
                 <th className="px-4 py-3 border">Ngày hết hạn</th>
                 <th className="px-4 py-3 border">Tạo lúc</th>
+                <th className="px-4 py-3 border text-center">Hành động</th>
               </tr>
             </thead>
             <tbody>
-              {todo.map((item, index) => {
+              {filteredTodos.map((item, index) => {
                 const status = getTaskStatus(item);
                 return (
                   <tr
-                    key={index}
+                    key={item._id || index}
                     className="hover:bg-gray-50 transition border-b last:border-none"
                   >
                     <td className="px-4 py-3 border text-gray-500">
@@ -179,6 +222,14 @@ const TodoList = () => {
                         ? new Date(item.createdAt).toLocaleDateString()
                         : "—"}
                     </td>
+                    <td className="px-4 py-3 border text-center space-x-2">
+                      <button className="text-blue-600 hover:underline">
+                        Sửa
+                      </button>
+                      <button className="text-red-600 hover:underline">
+                        Xóa
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -187,10 +238,11 @@ const TodoList = () => {
         </div>
       ) : (
         <div className="text-center py-10 text-gray-500">
-          Không có công việc nào để hiển thị 😢
+          Không có công việc nào để hiển thị
         </div>
       )}
 
+      {/* Phân trang */}
       {meta && (
         <div className="flex justify-center items-center gap-2 mt-6">
           <button
@@ -236,4 +288,4 @@ const TodoList = () => {
   );
 };
 
-export default TodoList;
+export default TodoListPage;

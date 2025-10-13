@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   FaHome,
   FaLightbulb,
@@ -25,36 +26,57 @@ const Sidebar = () => {
 
       {/* Menu items */}
       <nav className="flex flex-col gap-3 w-full px-6">
-        <button className="flex items-center gap-3 bg-white text-[#ff5c5c] font-medium py-2 px-4 rounded-xl shadow-sm">
-          <FaHome /> Bảng điều khiển
-        </button>
+        <Link
+          to="/"
+          className="flex items-center gap-3 bg-white text-[#ff5c5c] font-medium py-2 px-4 rounded-xl shadow-sm hover:opacity-90 transition-all"
+        >
+          <FaHome /> Trang chủ
+        </Link>
 
-        <button className="flex items-center gap-3 py-2 px-4 hover:bg-[#ff7b7b] rounded-xl transition-all">
+        <Link
+          to="/important"
+          className="flex items-center gap-3 py-2 px-4 hover:bg-[#ff7b7b] rounded-xl transition-all"
+        >
           <FaLightbulb /> Quan trọng
-        </button>
+        </Link>
 
-        <button className="flex items-center gap-3 py-2 px-4 hover:bg-[#ff7b7b] rounded-xl transition-all">
+        <Link
+          to="/todo-list"
+          className="flex items-center gap-3 py-2 px-4 hover:bg-[#ff7b7b] rounded-xl transition-all"
+        >
           <FaTasks /> Nhiệm vụ của tôi
-        </button>
+        </Link>
 
-        <button className="flex items-center gap-3 py-2 px-4 hover:bg-[#ff7b7b] rounded-xl transition-all">
+        <Link
+          to="/categories"
+          className="flex items-center gap-3 py-2 px-4 hover:bg-[#ff7b7b] rounded-xl transition-all"
+        >
           <FaListAlt /> Danh mục công việc
-        </button>
+        </Link>
 
-        <button className="flex items-center gap-3 py-2 px-4 hover:bg-[#ff7b7b] rounded-xl transition-all">
+        <Link
+          to="/settings"
+          className="flex items-center gap-3 py-2 px-4 hover:bg-[#ff7b7b] rounded-xl transition-all"
+        >
           <FaCog /> Cài đặt
-        </button>
+        </Link>
 
-        <button className="flex items-center gap-3 py-2 px-4 hover:bg-[#ff7b7b] rounded-xl transition-all">
+        <Link
+          to="/faq"
+          className="flex items-center gap-3 py-2 px-4 hover:bg-[#ff7b7b] rounded-xl transition-all"
+        >
           <FaQuestionCircle /> Trợ giúp
-        </button>
+        </Link>
       </nav>
 
       {/* Logout */}
       <div className="mt-auto w-full px-6 pt-6 border-t border-white/30">
-        <button className="flex items-center gap-3 py-2 px-4 hover:bg-[#ff7b7b] rounded-xl transition-all w-full">
+        <Link
+          to="/logout"
+          className="flex items-center gap-3 py-2 px-4 hover:bg-[#ff7b7b] rounded-xl transition-all w-full"
+        >
           <FaSignOutAlt /> Đăng xuất
-        </button>
+        </Link>
       </div>
     </aside>
   );

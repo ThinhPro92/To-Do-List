@@ -1,12 +1,6 @@
-import React from "react";
-import Layout from "./layouts/Layout";
-import TodoList from "./components/TodoList";
+import AppRouter from "./routes/index";
 const App = () => {
-  return (
-    <Layout>
-      <TodoList />
-    </Layout>
-  );
+  return <AppRouter />;
 };
 
 export default App;
