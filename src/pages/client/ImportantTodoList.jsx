@@ -1,4 +1,4 @@
 const ImportantTodoList = () => {
-  return <div>⭐ Danh sách công việc quan trọng</div>;
+  return <div> Danh sách công việc quan trọng</div>;
 };
 export default ImportantTodoList;
