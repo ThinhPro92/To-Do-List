@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { Link } from "react-router-dom";
+import { getToDo, deleteTodo } from "../../api/apiTodo";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const TodoListPage = () => {
   const [todo, setTodo] = useState([]);
@@ -15,6 +18,7 @@ const TodoListPage = () => {
     _order: "",
     q: "",
     priority: undefined,
+    completed: undefined,
   });
 
   useEffect(() => {
@@ -25,18 +29,28 @@ const TodoListPage = () => {
             ([, v]) => v !== undefined && v !== "" && v !== null
           )
         );
-        const { data } = await axios.get(
-          "https://api-class-o1lo.onrender.com/api/v1/todos",
-          { params: cleanQuery }
-        );
+
+        const data = await getToDo(cleanQuery);
         setTodo(data.data);
         setMeta(data.meta);
       } catch (error) {
-        console.log("Lỗi khi tải danh sách công việc", error);
+        toast.error(" Lỗi khi tải danh sách công việc", error);
       }
     };
     fetchTodo();
   }, [query]);
+
+  const handleDelete = async (id) => {
+    const ok = window.confirm("Bạn có chắc muốn xoá công việc này không?");
+    if (!ok) return;
+    try {
+      await deleteTodo(id);
+      setQuery((prev) => ({ ...prev }));
+      toast.success(" Xoá công việc thành công!");
+    } catch (error) {
+      toast.error(" Xoá công việc thất bại!", error);
+    }
+  };
 
   const handleSort = (order) => {
     setQuery((prev) => ({
@@ -66,6 +80,17 @@ const TodoListPage = () => {
 
   const handleFilterStatus = (value) => {
     setStatusFilter(value);
+    let completedFilter;
+
+    if (value === "Hoàn thành") completedFilter = true;
+    else if (value === "Đang thực hiện") completedFilter = false;
+    else completedFilter = undefined;
+
+    setQuery((prev) => ({
+      ...prev,
+      completed: completedFilter,
+      _page: 1,
+    }));
   };
 
   const handleResetFilters = () => {
@@ -79,13 +104,13 @@ const TodoListPage = () => {
       _order: "",
       q: "",
       priority: undefined,
+      completed: undefined,
     });
   };
 
   const getTaskStatus = (item) => {
     const now = new Date();
     const due = new Date(item.dueDate);
-
     if (item.completed)
       return { text: "Hoàn thành", color: "bg-green-100 text-green-700" };
     if (due < now) return { text: "Quá hạn", color: "bg-red-100 text-red-600" };
@@ -99,14 +124,9 @@ const TodoListPage = () => {
     return "—";
   };
 
-  const filteredTodos = todo.filter((item) => {
-    const status = getTaskStatus(item).text;
-    if (statusFilter === "") return true;
-    return status === statusFilter;
-  });
-
   return (
     <div className="max-w-7xl mx-auto mt-10 p-8 bg-white rounded-xl shadow-md">
+      <ToastContainer position="top-right" autoClose={2000} />
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
         <div className="flex gap-2 w-full sm:w-auto">
           <input
@@ -125,52 +145,62 @@ const TodoListPage = () => {
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-3 justify-center">
-          <select
-            value={priorityFilter}
-            onChange={(e) => handleFilterPriority(e.target.value)}
-            className="border border-gray-300 px-3 py-2 rounded-lg text-gray-700"
-          >
-            <option value="">Tất cả ưu tiên</option>
-            <option value="3">Cao</option>
-            <option value="2">Trung bình</option>
-            <option value="1">Thấp</option>
-          </select>
+        <div className="flex items-center gap-3">
+          <div className="flex flex-wrap gap-3 justify-center">
+            <select
+              value={priorityFilter}
+              onChange={(e) => handleFilterPriority(e.target.value)}
+              className="border border-gray-300 px-3 py-2 rounded-lg text-gray-700"
+            >
+              <option value="">Tất cả ưu tiên</option>
+              <option value="3">Cao</option>
+              <option value="2">Trung bình</option>
+              <option value="1">Thấp</option>
+            </select>
 
-          <select
-            value={statusFilter}
-            onChange={(e) => handleFilterStatus(e.target.value)}
-            className="border border-gray-300 px-3 py-2 rounded-lg text-gray-700"
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="Đang thực hiện">Đang thực hiện</option>
-            <option value="Quá hạn">Quá hạn</option>
-            <option value="Hoàn thành">Hoàn thành</option>
-          </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => handleFilterStatus(e.target.value)}
+              className="border border-gray-300 px-3 py-2 rounded-lg text-gray-700"
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="Đang thực hiện">Đang thực hiện</option>
+              <option value="Quá hạn">Quá hạn</option>
+              <option value="Hoàn thành">Hoàn thành</option>
+            </select>
 
-          <select
-            value={query._order}
-            onChange={(e) => handleSort(e.target.value)}
-            className="border border-gray-300 px-3 py-2 rounded-lg text-gray-700"
-          >
-            <option value="">Sắp xếp mặc định</option>
-            <option value="asc">Ưu tiên cao → thấp</option>
-            <option value="desc">Ưu tiên thấp → cao</option>
-          </select>
+            <select
+              value={query._order}
+              onChange={(e) => handleSort(e.target.value)}
+              className="border border-gray-300 px-3 py-2 rounded-lg text-gray-700"
+            >
+              <option value="">Sắp xếp mặc định</option>
+              <option value="desc">Ưu tiên cao → thấp</option>
+              <option value="asc">Ưu tiên thấp → cao</option>
+            </select>
 
-          <button
-            onClick={handleResetFilters}
-            className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+            <button
+              onClick={handleResetFilters}
+              className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+            >
+              Làm mới
+            </button>
+          </div>
+
+          <Link
+            to="/todos/create"
+            className="ml-3 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
           >
-            Làm mới
-          </button>
+            ➕ Thêm mới
+          </Link>
         </div>
       </div>
+
       <h2 className="text-2xl font-semibold text-gray-800 mb-4">
         📋 Danh sách công việc
       </h2>
 
-      {filteredTodos && filteredTodos.length > 0 ? (
+      {todo && todo.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full border border-gray-200 text-sm text-left">
             <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
@@ -182,11 +212,11 @@ const TodoListPage = () => {
                 <th className="px-4 py-3 border">Mức ưu tiên</th>
                 <th className="px-4 py-3 border">Ngày hết hạn</th>
                 <th className="px-4 py-3 border">Tạo lúc</th>
-                <th className="px-4 py-3 border text-center">Hành động</th>
+                <th className="px-4 py-3 border text-center w-40">Hành động</th>
               </tr>
             </thead>
             <tbody>
-              {filteredTodos.map((item, index) => {
+              {todo.map((item, index) => {
                 const status = getTaskStatus(item);
                 return (
                   <tr
@@ -222,13 +252,27 @@ const TodoListPage = () => {
                         ? new Date(item.createdAt).toLocaleDateString()
                         : "—"}
                     </td>
-                    <td className="px-4 py-3 border text-center space-x-2">
-                      <button className="text-blue-600 hover:underline">
-                        Sửa
-                      </button>
-                      <button className="text-red-600 hover:underline">
-                        Xóa
-                      </button>
+                    <td className="px-4 py-3 border text-center">
+                      <div className="flex justify-center gap-3">
+                        <Link
+                          to={`/todos/${item._id}`}
+                          className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600"
+                        >
+                          Xem
+                        </Link>
+                        <Link
+                          to={`/todos/edit/${item._id}`}
+                          className="bg-yellow-500 text-white px-3 py-1 rounded-lg hover:bg-yellow-600"
+                        >
+                          Sửa
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(item._id)}
+                          className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600"
+                        >
+                          Xóa
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -241,8 +285,6 @@ const TodoListPage = () => {
           Không có công việc nào để hiển thị
         </div>
       )}
-
-      {/* Phân trang */}
       {meta && (
         <div className="flex justify-center items-center gap-2 mt-6">
           <button

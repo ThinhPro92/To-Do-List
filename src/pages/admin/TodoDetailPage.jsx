@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import { getTodoDetail } from "../../api/apiTodo";
 
 const TodoDetailPage = () => {
   const { id } = useParams();
@@ -11,10 +11,8 @@ const TodoDetailPage = () => {
   useEffect(() => {
     const fetchDetail = async () => {
       try {
-        const { data } = await axios.get(
-          `http://localhost:8000/api/quoc/todos/${id}`
-        );
-        setTodo(data.data || data);
+        const res = await getTodoDetail(id);
+        setTodo(res.data || res);
       } catch (error) {
         console.error("Lỗi khi tải chi tiết công việc:", error);
       }
