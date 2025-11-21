@@ -1,7 +1,6 @@
 import {
   createSlice,
   createAsyncThunk,
-  type PayloadAction,
   isPending,
   isRejected,
 } from "@reduxjs/toolkit";
