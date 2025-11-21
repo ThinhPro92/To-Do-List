@@ -1,16 +1,25 @@
-// src/features/todo/todoSlice.ts
 import {
   createSlice,
   createAsyncThunk,
   type PayloadAction,
+  isPending,
+  isRejected,
 } from "@reduxjs/toolkit";
 import { todoApi } from "../../services/apiClient";
 import type { Todo } from "../../types/Todo";
-// ===== TYPES =====
+
 interface TodoState {
   todos: Todo[];
   loading: boolean;
   error: string | null;
+}
+
+export interface TodoQueryParams {
+  keyword?: string;
+  isCompleted?: boolean;
+  priority?: "low" | "medium" | "high";
+  page?: number;
+  limit?: number;
 }
 
 export interface AddTodoPayload {
@@ -30,34 +39,31 @@ const initialState: TodoState = {
   error: null,
 };
 
-// ===== THUNKS =====
-// Fetch list
-export const fetchTodos = createAsyncThunk<Todo[], Record<string, any> | void>(
+// ==== THUNKS ====
+export const fetchTodos = createAsyncThunk<Todo[], TodoQueryParams | undefined>(
   "todo/fetchTodos",
   async (params = {}, { rejectWithValue }) => {
     try {
       const res = await todoApi.getTodos(params);
       return res.data;
-    } catch (err: any) {
+    } catch {
       return rejectWithValue("Không thể tải dữ liệu");
     }
   }
 );
 
-// Add
 export const addTodo = createAsyncThunk<Todo, AddTodoPayload>(
   "todo/addTodo",
   async (body, { rejectWithValue }) => {
     try {
       const res = await todoApi.createTodo(body);
       return res.data;
-    } catch (err: any) {
+    } catch {
       return rejectWithValue("Thêm thất bại");
     }
   }
 );
 
-// Update
 export const updateTodo = createAsyncThunk<Todo, UpdateTodoPayload>(
   "todo/updateTodo",
   async ({ id, data }, { rejectWithValue }) => {
@@ -70,7 +76,6 @@ export const updateTodo = createAsyncThunk<Todo, UpdateTodoPayload>(
   }
 );
 
-// Toggle
 export const toggleTodo = createAsyncThunk<Todo, Todo>(
   "todo/toggleTodo",
   async (todo, { rejectWithValue }) => {
@@ -85,7 +90,6 @@ export const toggleTodo = createAsyncThunk<Todo, Todo>(
   }
 );
 
-// Delete
 export const removeTodo = createAsyncThunk<string, string>(
   "todo/removeTodo",
   async (id, { rejectWithValue }) => {
@@ -98,69 +102,58 @@ export const removeTodo = createAsyncThunk<string, string>(
   }
 );
 
-// ===== SLICE =====
+// ==== SLICE ====
 const todoSlice = createSlice({
   name: "todo",
   initialState,
   reducers: {},
   extraReducers: (builder) => {
     // ===== Fulfilled =====
-    builder.addCase(
-      fetchTodos.fulfilled,
-      (state, action: PayloadAction<Todo[]>) => {
-        state.loading = false;
-        state.todos = action.payload;
-      }
-    );
+    builder.addCase(fetchTodos.fulfilled, (state, action) => {
+      state.loading = false;
+      state.todos = action.payload;
+    });
 
-    builder.addCase(addTodo.fulfilled, (state, action: PayloadAction<Todo>) => {
+    builder.addCase(addTodo.fulfilled, (state, action) => {
       state.loading = false;
       state.todos.unshift(action.payload);
     });
 
-    builder.addCase(
-      updateTodo.fulfilled,
-      (state, action: PayloadAction<Todo>) => {
-        state.loading = false;
-        const index = state.todos.findIndex(
-          (t) => t._id === action.payload._id
-        );
-        if (index !== -1) state.todos[index] = action.payload;
-      }
-    );
+    builder.addCase(updateTodo.fulfilled, (state, action) => {
+      state.loading = false;
+      const index = state.todos.findIndex((t) => t._id === action.payload._id);
+      if (index !== -1) state.todos[index] = action.payload;
+    });
 
-    builder.addCase(
-      toggleTodo.fulfilled,
-      (state, action: PayloadAction<Todo>) => {
-        state.loading = false;
-        const index = state.todos.findIndex(
-          (t) => t._id === action.payload._id
-        );
-        if (index !== -1) state.todos[index] = action.payload;
-      }
-    );
+    builder.addCase(toggleTodo.fulfilled, (state, action) => {
+      state.loading = false;
+      const index = state.todos.findIndex((t) => t._id === action.payload._id);
+      if (index !== -1) state.todos[index] = action.payload;
+    });
 
     builder.addCase(removeTodo.fulfilled, (state, action) => {
       state.loading = false;
       state.todos = state.todos.filter((t) => t._id !== action.payload);
     });
 
-    // ===== GLOBAL pending / rejected phải đặt SAU addCase =====
+    // ===== GLOBAL PENDING =====
     builder.addMatcher(
-      (action) =>
-        action.type.startsWith("todo/") && action.type.endsWith("/pending"),
+      isPending(fetchTodos, addTodo, updateTodo, toggleTodo, removeTodo),
       (state) => {
         state.loading = true;
         state.error = null;
       }
     );
 
+    // ===== GLOBAL REJECTED =====
     builder.addMatcher(
-      (action) =>
-        action.type.startsWith("todo/") && action.type.endsWith("/rejected"),
+      isRejected(fetchTodos, addTodo, updateTodo, toggleTodo, removeTodo),
       (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.error =
+          (action.payload as string) ||
+          action.error?.message ||
+          "Có lỗi xảy ra!";
       }
     );
   },

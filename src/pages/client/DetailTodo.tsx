@@ -1,4 +1,3 @@
-// src/pages/client/DetailTodo.tsx
 import { useParams, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../redux/store";
